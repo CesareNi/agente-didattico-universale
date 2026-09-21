@@ -112,7 +112,7 @@ Azione operativa richiesta in modo esclusivo: {task_operativo}.
 Regola fondamentale: Esegui unicamente l'azione selezionata, focalizzandoti solo sui KPI didattici o tecnici specifici del grado scolastico selezionato, senza preamboli o convenevoli. Restituisci un output rigoroso, pulito e formattato in Markdown."""
 
                 model = genai.GenerativeModel(
-                    model_name="gemini-3.6-flash",
+                    model_name="gemini-2.5-flash",  # Aggiornato al modello standard stabile supportato
                     system_instruction=system_instruction
                 )
                 
@@ -127,12 +127,28 @@ Regola fondamentale: Esegui unicamente l'azione selezionata, focalizzandoti solo
                 )
                 db_conn.commit()
                 
-                st.success("Elaborazione completata e salvata nell'archivio universale!")
-                st.subheader(f"Risultato per: {task_operativo}")
-                st.markdown(output_generato)
+                # Salvataggio in session state per rendere disponibile il tasto di download
+                st.session_state['ultimo_output_universale'] = output_generato
+                st.session_state['ultimo_task_universale'] = task_operativo
                 
+                st.success("Elaborazione completata e salvata nell'archivio universale!")
+
             except Exception as e:
                 st.error(f"Errore durante l'elaborazione con le API di Gemini: {e}")
+
+# --- VISUALIZZAZIONE RISULTATO E TASTO DOWNLOAD (PERSISTENTI IN SESSIONE) ---
+if 'ultimo_output_universale' in st.session_state:
+    st.markdown("---")
+    st.subheader(f"Risultato per: {st.session_state.get('ultimo_task_universale', 'Elaborazione')}")
+    st.markdown(st.session_state['ultimo_output_universale'])
+    
+    st.markdown("---")
+    st.download_button(
+        label="📥 Scarica il lavoro generato (File di Testo)",
+        data=st.session_state['ultimo_output_universale'],
+        file_name="risultato_agente_universale.txt",
+        mime="text/plain"
+    )
 
 # --- SEZIONE ARCHIVIO STORICO (DATABASE PERSISTENTE) ---
 st.markdown("---")
